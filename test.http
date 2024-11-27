@@ -1,0 +1,50 @@
+
+# 注册
+# POST http://localhost:3001/user/register
+# Content-Type: application/json
+
+# {
+#     "username": "zhu",
+#     "password": "123456"
+# }
+
+# 登录
+# POST http://localhost:3001/user/login
+# Content-Type: application/json
+
+# {
+#     "username": "zh1u",
+#     "password": "1234567"
+# }
+
+# 新增书籍
+# POST http://localhost:3001/book/create
+# Content-Type: application/json
+
+# {
+#     "name": "死神",
+#     "author": "无名",
+#     "description": "死神",
+#     "cover": ""
+# }
+
+#查询书籍列表
+# Get http://localhost:3001/book/list
+
+#查询书籍
+# Get http://localhost:3001/book/667957
+
+#更新书籍
+# Post http://localhost:3001/book/update
+# Content-Type: application/json
+
+# {
+#     "id": 23118,
+#     "name": "海贼王",
+#     "author": "尾田",
+#     "description": "冒险",
+#     "cover": ""
+# }
+
+#删除书籍
+# DELETE http://localhost:3001/book/23118
