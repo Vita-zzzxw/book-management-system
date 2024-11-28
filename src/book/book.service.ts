@@ -13,6 +13,16 @@ export class BookService {
   @Inject(DbService)
   private dbService: DbService;
 
+  async list(name: string) {
+    const books: Book[] = await this.dbService.read();
+    const res = name
+      ? books.filter((book) => {
+          return book.name.includes(name);
+        })
+      : books;
+    return res;
+  }
+
   async getList() {
     const books: Book[] = await this.dbService.read();
     return books;

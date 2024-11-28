@@ -8,12 +8,17 @@ import {
   UseInterceptors,
   BadRequestException,
   UploadedFile,
+  Query,
+  UploadedFiles,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import CreateBookDto from './dto/create-book.dto';
 import UpdateBookDto from './dto/update-book.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { storage } from 'src/my-file-storage';
+import * as fs from 'fs';
 
 @Controller('book')
 export class BookController {
@@ -45,9 +50,78 @@ export class BookController {
     return file.path;
   }
 
+  // 大文件上传分片
+  @Post('maxUpload')
+  @UseInterceptors(
+    FilesInterceptor('files', 20, {
+      dest: 'uploads',
+    }),
+  )
+  uploadFile2(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Body() body,
+  ) {
+    const fileName = body.name.match(/(.+)\-\d+$/)[1];
+    const chunkDir = 'uploads/chunks_' + fileName;
+
+    if (!fs.existsSync(chunkDir)) {
+      fs.mkdirSync(chunkDir);
+    }
+    fs.cpSync(files[0].path, chunkDir + '/' + body.name);
+    fs.rmSync(files[0].path);
+  }
+
+  @Get('merge')
+  async merge(@Query('name') name: string) {
+    const chunkDir = 'uploads/chunks_' + name;
+
+    if (!fs.existsSync(chunkDir)) {
+      throw new HttpException(
+        `Directory ${chunkDir} does not exist`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const files = fs.readdirSync(chunkDir).sort((a, b) => {
+      const aNum = parseInt(a.split('-')[1]);
+      const bNum = parseInt(b.split('-')[1]);
+      return aNum - bNum;
+    });
+
+    let count = 0;
+    let startPos = 0;
+    const filePath = 'uploads/' + name;
+    files.forEach((file) => {
+      const filePath = chunkDir + '/' + file;
+      const stream = fs.createReadStream(filePath);
+      stream
+        .pipe(
+          fs.createWriteStream('uploads/' + name, {
+            start: startPos,
+          }),
+        )
+        .on('finish', () => {
+          count++;
+          if (count === files.length) {
+            fs.rm(
+              chunkDir,
+              {
+                recursive: true,
+              },
+              () => {},
+            );
+          }
+        });
+
+      startPos += fs.statSync(filePath).size;
+    });
+
+    return filePath;
+  }
+
   @Get('list')
-  async getList() {
-    return this.bookService.getList();
+  async list(@Query('name') name: string) {
+    return this.bookService.list(name);
   }
 
   @Get(':id')
