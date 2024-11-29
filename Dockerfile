@@ -20,11 +20,15 @@ COPY . .
 # 构建项目
 RUN npm run build
 
+# 安装 pm2
+RUN npm install pm2 -g
+
 # 暴露端口
 EXPOSE 3001
 
 # 设置启动命令
-CMD [ "node", "./dist/main.js" ]
+# CMD [ "node", "./dist/main.js" ]
+CMD [ "pm2-runtime",  "./dist/main.js" ]
 
 # 打包
 # docker build -t nest:first . 
